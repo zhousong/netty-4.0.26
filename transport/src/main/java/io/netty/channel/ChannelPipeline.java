@@ -214,6 +214,8 @@ import java.util.NoSuchElementException;
  * A {@link ChannelHandler} can be added or removed at any time because a {@link ChannelPipeline} is thread safe.
  * For example, you can insert an encryption handler when sensitive information is about to be exchanged, and remove it
  * after the exchange.
+ * ChannelPipeline是线程安全的，可以随时add或remove ChannelHandler，比如，你要交换某个敏感信息时，你可以插入一个加密Handler，
+ * 处理完成后remove掉这个加密的Handler
  */
 public interface ChannelPipeline
          extends Iterable<Entry<String, ChannelHandler>> {
