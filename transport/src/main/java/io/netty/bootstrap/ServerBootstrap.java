@@ -226,13 +226,15 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
             this.childAttrs = childAttrs;
         }
 
+        //client连接进来时，acceptor线程中触发channelRead，此处，将用户自定义的Handler、Config配置对对应的NioSocketChannel的ChannelPipeline
         @Override
         @SuppressWarnings("unchecked")
         public void channelRead(ChannelHandlerContext ctx, Object msg) {
+        	//NioSocketeChannel - 新连接accept进来后，包装了java.nio.SocketChannel
             final Channel child = (Channel) msg;
-
+            // 配置childHandler
             child.pipeline().addLast(childHandler);
-
+            // 配置Option
             for (Entry<ChannelOption<?>, Object> e: childOptions) {
                 try {
                     if (!child.config().setOption((ChannelOption<Object>) e.getKey(), e.getValue())) {
@@ -242,12 +244,13 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
                     logger.warn("Failed to set a channel option: " + child, t);
                 }
             }
-
+            // 配置Attri
             for (Entry<AttributeKey<?>, Object> e: childAttrs) {
                 child.attr((AttributeKey<Object>) e.getKey()).set(e.getValue());
             }
 
             try {
+            	//注册复用器
                 childGroup.register(child).addListener(new ChannelFutureListener() {
                     @Override
                     public void operationComplete(ChannelFuture future) throws Exception {

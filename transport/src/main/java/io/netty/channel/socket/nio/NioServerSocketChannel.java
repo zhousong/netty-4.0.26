@@ -132,10 +132,15 @@ public class NioServerSocketChannel extends AbstractNioMessageChannel
 
     @Override
     protected int doReadMessages(List<Object> buf) throws Exception {
-        SocketChannel ch = javaChannel().accept();
+    	//Accepts a connection made to this channel's socket. 
+    	//If this channel is in non-blocking mode then this method will immediately return null if there are no pending connections. 
+    	//Otherwise it will block indefinitely until a new connection is available or an I/O error occurs. 
+        //channel是non-blocking mode，所以不会阻塞，直接返回SocketChannel
+    	SocketChannel ch = javaChannel().accept();
 
         try {
             if (ch != null) {
+            	//包装成Netty的NioSocketChannel
                 buf.add(new NioSocketChannel(this, ch));
                 return 1;
             }

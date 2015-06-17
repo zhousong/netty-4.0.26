@@ -65,6 +65,7 @@ public abstract class AbstractByteBufAllocator implements ByteBufAllocator {
      *                     a heap buffer
      */
     protected AbstractByteBufAllocator(boolean preferDirect) {
+    	//Return true if sun.misc.Unsafe was found on the classpath and can be used for acclerated direct memory access.
         directByDefault = preferDirect && PlatformDependent.hasUnsafe();
         emptyBuf = new EmptyByteBuf(this);
     }

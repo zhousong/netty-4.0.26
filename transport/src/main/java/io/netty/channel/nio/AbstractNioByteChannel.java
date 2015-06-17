@@ -49,6 +49,7 @@ public abstract class AbstractNioByteChannel extends AbstractNioChannel {
      * @param ch                the underlying {@link SelectableChannel} on which it operates
      */
     protected AbstractNioByteChannel(Channel parent, SelectableChannel ch) {
+    	//NioSocketChannel的父类，初始化时感兴趣的Operation是SelectionKey.OP_READ
         super(parent, ch, SelectionKey.OP_READ);
     }
 
@@ -116,6 +117,7 @@ public abstract class AbstractNioByteChannel extends AbstractNioChannel {
                 do {
                     byteBuf = allocHandle.allocate(allocator);
                     int writable = byteBuf.writableBytes();
+                    //从socket中读取数据到byteBuf
                     int localReadAmount = doReadBytes(byteBuf);
                     if (localReadAmount <= 0) {
                         // not was read release the buffer
@@ -150,7 +152,7 @@ public abstract class AbstractNioByteChannel extends AbstractNioChannel {
                         break;
                     }
                 } while (++ messages < maxMessagesPerRead);
-
+                //fire一次读取事件完成
                 pipeline.fireChannelReadComplete();
                 allocHandle.record(totalReadAmount);
 

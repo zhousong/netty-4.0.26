@@ -79,6 +79,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
      */
     protected AbstractChannel(Channel parent) {
         this.parent = parent;
+        //抽象方法
         unsafe = newUnsafe();
         pipeline = new DefaultChannelPipeline(this);
     }
@@ -376,7 +377,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
      * {@link Unsafe} implementation which sub-classes must extend and use.
      */
     protected abstract class AbstractUnsafe implements Unsafe {
-
+    	// 每个Channel有一个ChannelOutboundBuffer，用来存放将要发送的消息
         private ChannelOutboundBuffer outboundBuffer = new ChannelOutboundBuffer(AbstractChannel.this);
         private boolean inFlush0;
         /** true if the channel has never been registered, false otherwise */
@@ -704,7 +705,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                 ReferenceCountUtil.release(msg);
                 return;
             }
-
+            //往缓存中添加一个消息对象
             outboundBuffer.addMessage(msg, size, promise);
         }
 
@@ -720,19 +721,22 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
         }
 
         protected void flush0() {
+        	//如果正在Flush，直接返回
             if (inFlush0) {
                 // Avoid re-entrance
                 return;
             }
-
+            //缓存outboundBuffer是空的，直接返回
             final ChannelOutboundBuffer outboundBuffer = this.outboundBuffer;
             if (outboundBuffer == null || outboundBuffer.isEmpty()) {
                 return;
             }
-
+            //inFlush标志位置为true
             inFlush0 = true;
 
             // Mark all pending write requests as failure if the channel is inactive.
+            // ch.isOpen() && ch.isConnected()
+            // channel异常，inFlush状态必须重置
             if (!isActive()) {
                 try {
                     if (isOpen()) {
@@ -747,6 +751,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
             }
 
             try {
+            	// NioSocketChannel
                 doWrite(outboundBuffer);
             } catch (Throwable t) {
                 outboundBuffer.failFlushed(t);

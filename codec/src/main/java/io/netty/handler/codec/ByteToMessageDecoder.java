@@ -226,12 +226,14 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
                 } else {
                     cumulation = cumulator.cumulate(ctx.alloc(), cumulation, data);
                 }
+                //真正decode数据
                 callDecode(ctx, cumulation, out);
             } catch (DecoderException e) {
                 throw e;
             } catch (Throwable t) {
                 throw new DecoderException(t);
             } finally {
+            	//累积Bytebuf为空则释放对象
                 if (cumulation != null && !cumulation.isReadable()) {
                     cumulation.release();
                     cumulation = null;

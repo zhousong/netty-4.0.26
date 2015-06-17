@@ -59,13 +59,16 @@ public abstract class AbstractNioMessageChannel extends AbstractNioChannel {
                 return;
             }
 
+            //得到配置的一次处理最大连接数
             final int maxMessagesPerRead = config.getMaxMessagesPerRead();
+            //NioServerSocketChannel的ChannelPipeline
             final ChannelPipeline pipeline = pipeline();
             boolean closed = false;
             Throwable exception = null;
             try {
                 try {
                     for (;;) {
+                    	//localRead>0则正常
                         int localRead = doReadMessages(readBuf);
                         if (localRead == 0) {
                             break;
@@ -90,6 +93,9 @@ public abstract class AbstractNioMessageChannel extends AbstractNioChannel {
                 setReadPending(false);
                 int size = readBuf.size();
                 for (int i = 0; i < size; i ++) {
+                	//1、io.netty.bootstrap.ServerBootstrap$ServerBootstrapAcceptor的register方法
+                	//2、触发AbstactChannel定义的doRegister(),绑定channel和Selector
+                	//3、最终触发Channel事件：registered、active
                     pipeline.fireChannelRead(readBuf.get(i));
                 }
 

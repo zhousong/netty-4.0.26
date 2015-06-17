@@ -267,6 +267,7 @@ public class NioSocketChannel extends AbstractNioByteChannel implements io.netty
             boolean setOpWrite = false;
 
             // Ensure the pending writes are made of ByteBufs only.
+            // 转换成ByteBuffer数组
             ByteBuffer[] nioBuffers = in.nioBuffers();
             int nioBufferCnt = in.nioBufferCount();
             long expectedWrittenBytes = in.nioBufferSize();
