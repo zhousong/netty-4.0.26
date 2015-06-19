@@ -18,6 +18,7 @@ package io.netty.channel;
 import java.net.SocketAddress;
 
 /**
+ * ChannelInboundHandler 和 ChannelOutboundHandler 的一个组合实现
  * {@link ChannelHandler} implementation which represents a combination out of a {@link ChannelInboundHandler} and
  * the {@link ChannelOutboundHandler}.
  *
