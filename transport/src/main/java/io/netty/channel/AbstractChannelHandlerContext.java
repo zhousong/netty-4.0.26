@@ -760,7 +760,9 @@ abstract class AbstractChannelHandlerContext extends DefaultAttributeMap impleme
         AbstractChannelHandlerContext next = findContextOutbound();
         EventExecutor executor = next.executor();
         if (executor.inEventLoop()) {
+        	// 写入数据到outBoundBuffer
             next.invokeWrite(msg, promise);
+            // 将buffer中数据通过SocketChannel写入内核
             if (flush) {
                 next.invokeFlush();
             }

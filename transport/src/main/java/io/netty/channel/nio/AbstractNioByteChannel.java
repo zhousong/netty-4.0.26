@@ -287,9 +287,11 @@ public abstract class AbstractNioByteChannel extends AbstractNioChannel {
     protected final void incompleteWrite(boolean setOpWrite) {
         // Did not write completely.
         if (setOpWrite) {
+        	//key.interestOps(interestOps | SelectionKey.OP_WRITE)
             setOpWrite();
         } else {
             // Schedule flush again later so other tasks can be picked up in the meantime
+        	// buffer中有大量消息要发送时，将导致线程无法处理其他请求，所以此处做让步处理，将flush放入Task队列，过会儿再发送
             Runnable flushTask = this.flushTask;
             if (flushTask == null) {
                 flushTask = this.flushTask = new Runnable() {

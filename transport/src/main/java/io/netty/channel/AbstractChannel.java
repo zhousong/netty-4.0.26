@@ -695,7 +695,9 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
 
             int size;
             try {
+            	// buffer -> direct buffer,且必须是Direct Buffer
                 msg = filterOutboundMessage(msg);
+                // 获取buffer可读数据长度ByteBuf.readableBytes()
                 size = estimatorHandle().size(msg);
                 if (size < 0) {
                     size = 0;
@@ -744,7 +746,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                         outboundBuffer.failFlushed(CLOSED_CHANNEL_EXCEPTION);
                     }
                 } finally {
-                	// channel异常，inFlush状态必须重置
+                	// channel异常，finally中重置inFlush状态
                     inFlush0 = false;
                 }
                 return;
@@ -759,6 +761,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                     close(voidPromise());
                 }
             } finally {
+            	// finally中重置inFlush状态
                 inFlush0 = false;
             }
         }

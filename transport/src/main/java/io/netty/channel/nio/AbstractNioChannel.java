@@ -299,6 +299,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
             // Flush immediately only when there's no pending flush.
             // If there's a pending flush operation, event loop will call forceFlush() later,
             // and thus there's no need to call it now.
+        	// 判断是否有即将发生的Flush动作，因为EventLoop的run循环中会调用forceFlush()
             if (isFlushPending()) {
                 return;
             }
@@ -386,6 +387,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
      */
     protected final ByteBuf newDirectBuffer(ByteBuf buf) {
         final int readableBytes = buf.readableBytes();
+        //如果可读字节数为空，则返回一个空的buffer
         if (readableBytes == 0) {
             ReferenceCountUtil.safeRelease(buf);
             return Unpooled.EMPTY_BUFFER;

@@ -27,6 +27,8 @@ import io.netty.util.internal.StringUtil;
 import java.util.List;
 
 /**
+ *  有状态ChannelHandler，不能共享使用，即每个channel需要对应一个ByteToMessageDecoder
+ *  
  * {@link ChannelInboundHandlerAdapter} which decodes bytes in a stream-like fashion from one {@link ByteBuf} to an
  * other Message type.
  *
@@ -76,6 +78,7 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
         @Override
         public ByteBuf cumulate(ByteBufAllocator alloc, ByteBuf cumulation, ByteBuf in) {
             ByteBuf buffer;
+            // 如果累积Bytebuf容量不足或refCnt > 1 ，则新建累积Bytebuf，拷贝旧的数据，再写入最新的数据
             if (cumulation.writerIndex() > cumulation.maxCapacity() - in.readableBytes()
                     || cumulation.refCnt() > 1) {
                 // Expand cumulation (by replace it) when either there is not more room in the buffer
@@ -129,12 +132,13 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
             return buffer;
         }
     };
-
+    // 存放累积读取的数据，比如半包读取
     ByteBuf cumulation;
     private Cumulator cumulator = MERGE_CUMULATOR;
     private boolean singleDecode;
     private boolean first;
 
+    // 默认构造方法，确保ChannelHandler不是Sharable
     protected ByteToMessageDecoder() {
         CodecUtil.ensureNotSharable(this);
     }
@@ -220,10 +224,13 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
             RecyclableArrayList out = RecyclableArrayList.newInstance();
             try {
                 ByteBuf data = (ByteBuf) msg;
+                // 判断cumulation 是否为空
                 first = cumulation == null;
+                // 第一次读取数据，则直接赋值
                 if (first) {
                     cumulation = data;
                 } else {
+                	// 合并cumulation中的数据和新读取的数据
                     cumulation = cumulator.cumulate(ctx.alloc(), cumulation, data);
                 }
                 //真正decode数据
@@ -241,6 +248,7 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
                 int size = out.size();
 
                 for (int i = 0; i < size; i ++) {
+                	// 将decode到List中的数据通知到上层
                     ctx.fireChannelRead(out.get(i));
                 }
                 out.recycle();
@@ -324,10 +332,11 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
                     break;
                 }
 
-                if (outSize == out.size()) {
+                // 一次Decode完成后，outList没有变化
+                if (outSize == out.size()) {// 需要处理的Bytebuf数据长度未变化，则说明是半包，需要再从Socket中读取数据
                     if (oldInputLength == in.readableBytes()) {
                         break;
-                    } else {
+                    } else {//???
                         continue;
                     }
                 }
@@ -372,6 +381,9 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
         decode(ctx, in, out);
     }
 
+    /**
+     * 新建Bytebuf，释放旧的buf
+     */
     static ByteBuf expandCumulation(ByteBufAllocator alloc, ByteBuf cumulation, int readable) {
         ByteBuf oldCumulation = cumulation;
         cumulation = alloc.buffer(oldCumulation.readableBytes() + readable);
