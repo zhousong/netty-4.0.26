@@ -380,14 +380,16 @@ public abstract class Recycler<T> {
             item.recycleId = item.lastRecycledId = OWN_THREAD_ID;
 
             int size = this.size;
+            // 4.0.24版本 (if (size == maxCapacity) {),会导致内存泄漏
             if (size >= maxCapacity) {
                 // Hit the maximum capacity - drop the possibly youngest object.
                 return;
             }
             if (size == elements.length) {
+            	// elements数据量未到maxCapacity，则扩容
                 elements = Arrays.copyOf(elements, Math.min(size << 1, maxCapacity));
             }
-
+            // 存入item 
             elements[size] = item;
             this.size = size + 1;
         }

@@ -121,8 +121,13 @@ public abstract class AbstractNioByteChannel extends AbstractNioChannel {
                     int localReadAmount = doReadBytes(byteBuf);
                     if (localReadAmount <= 0) {
                         // not was read release the buffer
+                    	// 释放内存
+                    	// 1、堆内存分配的由JVM回收
+                    	// 2、非堆分配的直接调用Native方法释放内存
+                    	// 3、内存池相关的，回收到内存池中
                         byteBuf.release();
                         byteBuf = null;
+                        // 如果是-1，则需要关闭channel
                         close = localReadAmount < 0;
                         break;
                     }

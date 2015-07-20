@@ -268,6 +268,7 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
             // See:
             // - https://github.com/netty/netty/issues/2327
             // - https://github.com/netty/netty/issues/1764
+        	// 清理部分数据
             cumulation.discardSomeReadBytes();
         }
         ctx.fireChannelReadComplete();
