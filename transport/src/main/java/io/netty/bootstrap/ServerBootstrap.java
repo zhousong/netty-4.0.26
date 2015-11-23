@@ -250,7 +250,8 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
             }
 
             try {
-            	//注册复用器
+            	//注册channel到EventLoop，因为是多个EventLooop线程，
+            	//所以会按一定的规则(EventExecutorChooser)选择一个EventLoop和Channel关联绑定
                 childGroup.register(child).addListener(new ChannelFutureListener() {
                     @Override
                     public void operationComplete(ChannelFuture future) throws Exception {

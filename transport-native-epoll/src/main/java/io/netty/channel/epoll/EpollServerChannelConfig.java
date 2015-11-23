@@ -20,6 +20,7 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.MessageSizeEstimator;
 import io.netty.channel.RecvByteBufAllocator;
 import io.netty.util.NetUtil;
+import io.netty.util.internal.PlatformDependent;
 
 import java.util.Map;
 
@@ -29,6 +30,7 @@ import static io.netty.channel.ChannelOption.SO_REUSEADDR;
 
 public class EpollServerChannelConfig extends EpollChannelConfig {
     protected final AbstractEpollChannel channel;
+    // PlatformDependent.isWindows() ? 200 : 128;
     private volatile int backlog = NetUtil.SOMAXCONN;
 
     EpollServerChannelConfig(AbstractEpollChannel channel) {

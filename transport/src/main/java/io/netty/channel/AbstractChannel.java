@@ -79,7 +79,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
      */
     protected AbstractChannel(Channel parent) {
         this.parent = parent;
-        //抽象方法
+        // 抽象方法，子类中实现
         unsafe = newUnsafe();
         pipeline = new DefaultChannelPipeline(this);
     }
@@ -753,7 +753,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
             }
 
             try {
-            	// NioSocketChannel
+            	// NioSocketChannel / AbstractEpollStreamChannel
                 doWrite(outboundBuffer);
             } catch (Throwable t) {
                 outboundBuffer.failFlushed(t);

@@ -250,6 +250,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
 
             // Regardless if the connection attempt was cancelled, channelActive() event should be triggered,
             // because what happened is what happened.
+            // 不管连接是不是已经被取消了，ChannelActive事件还是需要通知上层应用，because what happened is what happened.
             if (!wasActive && isActive()) {
                 pipeline().fireChannelActive();
             }

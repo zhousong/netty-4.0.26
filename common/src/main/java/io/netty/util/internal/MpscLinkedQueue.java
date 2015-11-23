@@ -31,6 +31,7 @@ import java.util.Queue;
 /**
  * A lock-free concurrent single-consumer multi-producer {@link Queue}.
  * It allows multiple producer threads to perform the following operations simultaneously:
+ * 多个生产线程，线程安全地同时调用以下方法
  * <ul>
  * <li>{@link #offer(Object)}, {@link #add(Object)}, and {@link #addAll(Collection)}</li>
  * <li>All other read-only operations:
@@ -43,6 +44,7 @@ import java.util.Queue;
  *     </ul>
  * </li>
  * </ul>
+ * 消费线程独占式的调用以下方法
  * .. while only one consumer thread is allowed to perform the following operations exclusively:
  * <ul>
  * <li>{@link #poll()} and {@link #remove()}</li>

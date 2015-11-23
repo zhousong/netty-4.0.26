@@ -30,7 +30,7 @@ abstract class PoolArena<T> {
     private final int maxOrder;
     final int pageSize;
     final int pageShifts;
-    final int chunkSize;
+    final int chunkSize;//默认16M（16777216byte）
     final int subpageOverflowMask;
     final int numSmallSubpagePools;
     private final PoolSubpage<T>[] tinySubpagePools;
@@ -47,11 +47,11 @@ abstract class PoolArena<T> {
     //private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
 
     protected PoolArena(PooledByteBufAllocator parent, int pageSize, int maxOrder, int pageShifts, int chunkSize) {
-        this.parent = parent;
-        this.pageSize = pageSize;
-        this.maxOrder = maxOrder;
+        this.parent = parent;// PooledByteBufAllocator
+        this.pageSize = pageSize;// 每一页的大小
+        this.maxOrder = maxOrder;// chunk队列的深度
         this.pageShifts = pageShifts;
-        this.chunkSize = chunkSize;
+        this.chunkSize = chunkSize;// 整个chunk的大小
         subpageOverflowMask = ~(pageSize - 1);
         tinySubpagePools = newSubpagePoolArray(numTinySubpagePools);
         for (int i = 0; i < tinySubpagePools.length; i ++) {
@@ -160,7 +160,7 @@ abstract class PoolArena<T> {
                 // was able to allocate out of the cache so move on
                 return;
             }
-        } else {
+        } else {// 超大的内存申请，直接使用JVM堆内存
             // Huge allocations are never served via the cache so just call allocateHuge
             allocateHuge(buf, reqCapacity);
             return;

@@ -336,6 +336,8 @@ abstract class AbstractChannelHandlerContext extends DefaultAttributeMap impleme
     private void invokeChannelRead(Object msg) {
         invokedThisChannelRead = true;
         try {
+        	// 如果是新客户端接入，将调用 ServerBootstrapAcceptor
+        	// 如果是数据可读，将调用ByteToMessageDecoder
             ((ChannelInboundHandler) handler()).channelRead(this, msg);
         } catch (Throwable t) {
             notifyHandlerException(t);

@@ -58,6 +58,7 @@ public abstract class AbstractEpollStreamChannel extends AbstractEpollChannel {
     protected AbstractEpollStreamChannel(int fd) {
         super(fd, Native.EPOLLIN);
         // Add EPOLLRDHUP so we are notified once the remote peer close the connection.
+        // 对方关闭连接时，会触发EPOLLRDHUP
         flags |= Native.EPOLLRDHUP;
     }
 
@@ -82,8 +83,11 @@ public abstract class AbstractEpollStreamChannel extends AbstractEpollChannel {
         }
 
         if (buf.hasMemoryAddress() || buf.nioBufferCount() == 1) {
+        	// 成功写入本地缓冲区的数据量
             int writtenBytes = doWriteBytes(buf, writeSpinCount);
+            // 释放已经成功写入的数据
             in.removeBytes(writtenBytes);
+            // 返回是否已经全部成功写入
             return writtenBytes == readableBytes;
         } else {
             ByteBuffer[] nioBuffers = buf.nioBuffers();
@@ -232,8 +236,8 @@ public abstract class AbstractEpollStreamChannel extends AbstractEpollChannel {
     protected void doWrite(ChannelOutboundBuffer in) throws Exception {
         int writeSpinCount = config().getWriteSpinCount();
         for (;;) {
+        	// 消息已经发送完毕，清除Native.EPOLLOUT
             final int msgCount = in.size();
-
             if (msgCount == 0) {
                 // Wrote all messages.
                 clearFlag(Native.EPOLLOUT);
@@ -250,6 +254,7 @@ public abstract class AbstractEpollStreamChannel extends AbstractEpollChannel {
                 // because a user might have triggered another write and flush when we notify his or her
                 // listeners.
             } else { // msgCount == 1
+            	// 只有一个消息要处理
                 if (!doWriteSingle(in, writeSpinCount)) {
                     break;
                 }
@@ -263,6 +268,7 @@ public abstract class AbstractEpollStreamChannel extends AbstractEpollChannel {
         if (msg instanceof ByteBuf) {
             ByteBuf buf = (ByteBuf) msg;
             if (!writeBytes(in, buf, writeSpinCount)) {
+            	// 未能成功全部写入缓冲区，稍后再处理
                 // was not able to write everything so break here we will get notified later again once
                 // the network stack can handle more writes.
                 return false;
@@ -488,6 +494,7 @@ public abstract class AbstractEpollStreamChannel extends AbstractEpollChannel {
                 // Closed via cancellation and the promise has been notified already.
                 return;
             }
+            // 连接服务器成功后，设置socket状态active=true
             active = true;
 
             // trySuccess() will return false if a user cancelled the connection attempt.
@@ -495,6 +502,7 @@ public abstract class AbstractEpollStreamChannel extends AbstractEpollChannel {
 
             // Regardless if the connection attempt was cancelled, channelActive() event should be triggered,
             // because what happened is what happened.
+            // 不管连接是不是已经被取消了，ChannelActive事件还是需要通知上层应用，because what happened is what happened.
             if (!wasActive && isActive()) {
                 pipeline().fireChannelActive();
             }

@@ -1,0 +1,49 @@
+SingleThreadEventExecutor：
+	执行execute方法，立即执行（可能在loop线程）或addTask将Task保存到TaskQueue中
+	
+	SingleThreadEventExecutor：newTaskQueue()
+	默认使用LinkedBlockingQueue来保存待执行的Task，如果子类不需要使用阻塞的方法，可以用其他高性能的Queue来替代
+	实际NioEventLoop、EpollEventLoop都使用了MpscLinkedQueue ：PlatformDependent.newMpscQueue()
+	MpscLinkedQueue：A lock-free concurrent single-consumer multi-producer Queue
+	
+	WAKEUP_TASK是个空的Runnable，作用是什么？
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

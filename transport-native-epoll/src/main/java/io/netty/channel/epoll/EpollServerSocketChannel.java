@@ -30,9 +30,11 @@ import java.net.SocketAddress;
 public final class EpollServerSocketChannel extends AbstractEpollServerChannel implements ServerSocketChannel {
 
     private final EpollServerSocketChannelConfig config;
+    // 服务端监听的IP及端口信息
     private volatile InetSocketAddress local;
 
     public EpollServerSocketChannel() {
+    	// FileDescriptor(fd = Native.socketStreamFd())
         super(Native.socketStreamFd());
         config = new EpollServerSocketChannelConfig(this);
     }
@@ -61,6 +63,7 @@ public final class EpollServerSocketChannel extends AbstractEpollServerChannel i
         int fd = fd().intValue();
         Native.bind(fd, addr);
         local = Native.localAddress(fd);
+        // 非常重要：服务端监听Socket
         Native.listen(fd, config.getBacklog());
         active = true;
     }

@@ -59,7 +59,9 @@ final class EpollEventLoop extends SingleThreadEventLoop {
     private volatile int ioRatio = 50;
 
     EpollEventLoop(EventLoopGroup parent, ThreadFactory threadFactory, int maxEvents) {
+    	// false -- Task提交时，是否需要wakeUp loop线程
         super(parent, threadFactory, false);
+        // maxEvents 默认传进来都是0
         if (maxEvents == 0) {
             allowGrowing = true;
             events = new EpollEventArray(4096);
@@ -71,8 +73,11 @@ final class EpollEventLoop extends SingleThreadEventLoop {
         int epollFd = -1;
         int eventFd = -1;
         try {
+        	// 创建epollFd
             this.epollFd = epollFd = Native.epollCreate();
+            // 创建eventFd
             this.eventFd = eventFd = Native.eventFd();
+            // 将eventFd添加到epollFd中并监听事件
             Native.epollCtlAdd(epollFd, eventFd, Native.EPOLLIN);
             success = true;
         } finally {
@@ -109,7 +114,9 @@ final class EpollEventLoop extends SingleThreadEventLoop {
     void add(AbstractEpollChannel ch) {
         assert inEventLoop();
         int fd = ch.fd().intValue();
+        // 将fd添加到epollFd中并监听flags事件
         Native.epollCtlAdd(epollFd, fd, ch.flags);
+        // 缓存fd和channel的对应关系
         channels.put(fd, ch);
     }
 
@@ -118,6 +125,7 @@ final class EpollEventLoop extends SingleThreadEventLoop {
      */
     void modify(AbstractEpollChannel ch) {
         assert inEventLoop();
+        // 监听事件修改：epollFd中的的fd所添加的事件  - flags
         Native.epollCtlMod(epollFd, ch.fd().intValue(), ch.flags);
     }
 
@@ -132,6 +140,7 @@ final class EpollEventLoop extends SingleThreadEventLoop {
             if (channels.remove(fd) != null) {
                 // Remove the epoll. This is only needed if it's still open as otherwise it will be automatically
                 // removed once the file-descriptor is closed.
+            	// fd 还在打开的情况下需要从epollFd中删除，如果已经关闭，则不需要，因为关闭时，会自动被删除
                 Native.epollCtlDel(epollFd, ch.fd().intValue());
             }
         }
@@ -195,11 +204,14 @@ final class EpollEventLoop extends SingleThreadEventLoop {
     @Override
     protected void run() {
         for (;;) {
+        	// oldWakenUp 如果是 1，则为True
             boolean oldWakenUp = WAKEN_UP_UPDATER.getAndSet(this, 0) == 1;
             try {
+            	// 待处理的Socket数
                 int ready;
                 if (hasTasks()) {
                     // Non blocking just return what is ready directly without block
+                	// 因为有Task需要处理，不能被阻塞，所以timeout 参数是0，没有有处理的也不会阻塞住
                     ready = Native.epollWait(epollFd, events, 0);
                 } else {
                     ready = epollWait(oldWakenUp);
@@ -244,21 +256,25 @@ final class EpollEventLoop extends SingleThreadEventLoop {
                     }
                     runAllTasks();
                 } else {
+                	// 开始执行IO操作的相对时间
                     final long ioStartTime = System.nanoTime();
 
                     if (ready > 0) {
                         processReady(events, ready);
                     }
-
+                    // IO操作花费的时间
                     final long ioTime = System.nanoTime() - ioStartTime;
+                    // 根据ioRatio比率，计算执行业务层Task允许执行的时长
                     runAllTasks(ioTime * (100 - ioRatio) / ioRatio);
                 }
+                // 扩容
                 if (allowGrowing && ready == events.length()) {
                     //increase the size of the array as we needed the whole space for the events
                     events.increase();
                 }
                 if (isShuttingDown()) {
                     closeAll();
+                    // 确保线程关闭后，break出循环
                     if (confirmShutdown()) {
                         break;
                     }
@@ -295,6 +311,7 @@ final class EpollEventLoop extends SingleThreadEventLoop {
     }
 
     private void processReady(EpollEventArray events, int ready) {
+    	// 遍历ready 的Socket
         for (int i = 0; i < ready; i ++) {
             final int fd = events.fd(i);
             if (fd == eventFd) {
@@ -322,6 +339,7 @@ final class EpollEventLoop extends SingleThreadEventLoop {
                     // See https://github.com/netty/netty/issues/3443
                     if (write && ch.isOpen()) {
                         // force flush of data as the epoll is writable again
+                    	// 缓冲区又可以写了(写入大量数据时，对方缓冲区可能满了，不能再写入数据，对方读取数据后，状态变为可写)
                         unsafe.epollOutReady();
                     }
                     if (read && ch.isOpen()) {
@@ -330,6 +348,7 @@ final class EpollEventLoop extends SingleThreadEventLoop {
                     }
                 } else {
                     // We received an event for an fd which we not use anymore. Remove it from the epoll_event set.
+                	// 将fd中epollFd中删除
                     Native.epollCtlDel(epollFd, fd);
                 }
             }

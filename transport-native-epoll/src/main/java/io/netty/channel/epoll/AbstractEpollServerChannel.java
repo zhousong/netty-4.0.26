@@ -31,6 +31,7 @@ import java.net.SocketAddress;
 public abstract class AbstractEpollServerChannel extends AbstractEpollChannel implements ServerChannel {
 
     protected AbstractEpollServerChannel(int fd) {
+    	// 服务端监听的Socket，关注事件为Native.EPOLLIN，有客户端连接上来时触发
         super(fd, Native.EPOLLIN);
     }
 
@@ -80,6 +81,7 @@ public abstract class AbstractEpollServerChannel extends AbstractEpollChannel im
         @Override
         void epollInReady() {
             assert eventLoop().inEventLoop();
+            // 判断是否Edge-triggered模式
             boolean edgeTriggered = isFlagSet(Native.EPOLLET);
 
             final ChannelConfig config = config();
@@ -94,6 +96,8 @@ public abstract class AbstractEpollServerChannel extends AbstractEpollChannel im
             try {
                 try {
                     // if edgeTriggered is used we need to read all messages as we are not notified again otherwise.
+                	// ET模式下，如果有数据，必须全部读完，否则状态不会变化，不会再有Notification
+                	// ET模式下，maxMessagesPerRead = Integer.MAX_VALUE，LT模式下才能配置MaxMessagesPerRead
                     final int maxMessagesPerRead = edgeTriggered
                             ? Integer.MAX_VALUE : config.getMaxMessagesPerRead();
                     int messages = 0;
@@ -110,6 +114,7 @@ public abstract class AbstractEpollServerChannel extends AbstractEpollChannel im
                             pipeline.fireChannelRead(newChildChannel(socketFd, acceptedAddress, 1, len));
                         } catch (Throwable t) {
                             // keep on reading as we use epoll ET and need to consume everything from the socket
+                        	// ET模式下，异常了也要将数据读完
                             pipeline.fireChannelReadComplete();
                             pipeline.fireExceptionCaught(t);
                         } finally {

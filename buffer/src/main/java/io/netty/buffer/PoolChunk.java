@@ -103,6 +103,7 @@ package io.netty.buffer;
 
 final class PoolChunk<T> {
 
+	// 默认修饰符，包内可见
     final PoolArena<T> arena;
     final T memory;
     final boolean unpooled;
@@ -164,6 +165,7 @@ final class PoolChunk<T> {
     }
 
     /** Creates a special chunk that is not pooled. */
+    // 超大的内存申请，直接使用JVM堆内存
     PoolChunk(PoolArena<T> arena, T memory, int size) {
         unpooled = true;
         this.arena = arena;

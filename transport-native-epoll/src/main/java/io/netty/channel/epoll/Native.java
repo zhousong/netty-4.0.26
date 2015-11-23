@@ -50,9 +50,13 @@ final class Native {
     }
 
     // EventLoop operations and constants
+    // 有连接到达或有数据可读
     public static final int EPOLLIN = epollin();
+    // 数据可写，比如缓冲区被写满了，对端读取数据后，状态变为可写
     public static final int EPOLLOUT = epollout();
+    // 对端close Socket
     public static final int EPOLLRDHUP = epollrdhup();
+    // Edge-Trigger
     public static final int EPOLLET = epollet();
 
     public static final int IOV_MAX = iovMax();
@@ -140,9 +144,11 @@ final class Native {
         throw newIOException(method, err);
     }
 
+    /***********************************************/
     public static native int eventFd();
     public static native void eventFdWrite(int fd, long value);
     public static native void eventFdRead(int fd);
+    /***********************************************/
     public static native int epollCreate();
     public static int epollWait(int efd, EpollEventArray events, int timeout) throws IOException {
         int ready = epollWait0(efd, events.memoryAddress(), events.length(), timeout);
@@ -158,6 +164,7 @@ final class Native {
     public static native void epollCtlMod(int efd, final int fd, final int flags);
     public static native void epollCtlDel(int efd, final int fd);
 
+    /***********************************************/
     private static native int errnoEBADF();
     private static native int errnoEPIPE();
     private static native int errnoECONNRESET();
@@ -165,6 +172,7 @@ final class Native {
     private static native int errnoEAGAIN();
     private static native int errnoEWOULDBLOCK();
     private static native int errnoEINPROGRESS();
+    /***********************************************/
     private static native String strError(int err);
 
     // File-descriptor operations
@@ -353,6 +361,7 @@ final class Native {
     private static native boolean isSupportingSendmmsg();
 
     // socket operations
+    // 返回Socket对应fd
     public static int socketStreamFd() {
         int res = socketStream();
         if (res < 0) {

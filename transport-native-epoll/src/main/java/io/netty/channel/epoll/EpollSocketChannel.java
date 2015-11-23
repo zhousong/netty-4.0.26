@@ -40,6 +40,15 @@ public final class EpollSocketChannel extends AbstractEpollStreamChannel impleme
     private volatile InetSocketAddress local;
     private volatile InetSocketAddress remote;
 
+    /**
+     * 客户端成功接入后，EpollServerSocketChannel中创建EpollSocketChannel，最终调到EPollEventLoop的add方法
+     * //会将新创建的Channel注册到EventLoop，因为是多个EventLooop线程，
+     * //所以会按一定的规则(EventExecutorChooser)选择一个EventLoop和Channel关联绑定
+     * 
+     * @param parent EpollServerSocketChannel.this
+     * @param fd     
+     * @param remote
+     */
     EpollSocketChannel(Channel parent, int fd, InetSocketAddress remote) {
         super(parent, fd);
         config = new EpollSocketChannelConfig(this);
@@ -50,6 +59,7 @@ public final class EpollSocketChannel extends AbstractEpollStreamChannel impleme
     }
 
     public EpollSocketChannel() {
+    	// FileDescriptor(fd = Native.socketStreamFd())
         super(Native.socketStreamFd());
         config = new EpollSocketChannelConfig(this);
     }

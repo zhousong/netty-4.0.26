@@ -35,9 +35,11 @@ import java.nio.channels.UnresolvedAddressException;
 abstract class AbstractEpollChannel extends AbstractChannel implements UnixChannel {
     private static final ChannelMetadata DATA = new ChannelMetadata(false);
     private final int readFlag;
+    // 封装了fd
     private final FileDescriptor fileDescriptor;
+    // 默认使用边缘触发模式EDGE-TRIGGERED,,,(水平触发-条件触发LEVEL-TRIGGERED)
     protected int flags = Native.EPOLLET;
-
+    // 状态位：Socket是否active
     protected volatile boolean active;
 
     AbstractEpollChannel(int fd, int flag) {
@@ -53,8 +55,11 @@ abstract class AbstractEpollChannel extends AbstractChannel implements UnixChann
         if (fd == null) {
             throw new NullPointerException("fd");
         }
+        // EPOLLIN
         readFlag = flag;
+        // ET模式下，服务端默认监听EPOLLIN事件，即等待客户端连接（accept）
         flags |= flag;
+        // 类初始化时，默认为False，监听成功后，设置为True
         this.active = active;
         fileDescriptor = fd;
     }
@@ -243,6 +248,7 @@ abstract class AbstractEpollChannel extends AbstractChannel implements UnixChann
 
     protected final int doWriteBytes(ByteBuf buf, int writeSpinCount) throws Exception {
         int readableBytes = buf.readableBytes();
+        // writtenBytes 记录已经写入多少数据
         int writtenBytes = 0;
         if (buf.hasMemoryAddress()) {
             long memoryAddress = buf.memoryAddress();
@@ -271,18 +277,23 @@ abstract class AbstractEpollChannel extends AbstractChannel implements UnixChann
             for (int i = writeSpinCount - 1; i >= 0; i--) {
                 int pos = nioBuf.position();
                 int limit = nioBuf.limit();
+                // 写入本地缓冲区的数据量
                 int localFlushedAmount = Native.write(fileDescriptor.intValue(), nioBuf, pos, limit);
                 if (localFlushedAmount > 0) {
                     nioBuf.position(pos + localFlushedAmount);
                     writtenBytes += localFlushedAmount;
+                    // 可写数据全部写完，即操作成功
                     if (writtenBytes == readableBytes) {
                         return writtenBytes;
                     }
                 } else {
+                	// localFlushedAmount=0，可能出现了异常
                     break;
                 }
             }
         }
+        // 如果没有完全把数据写入，可能因为对方缓冲区满了，所以设置Native.EPOLLOUT
+        // 对方读取了数据，缓冲区又可写时，再获得Notification
         if (writtenBytes < readableBytes) {
             // Returned EAGAIN need to set EPOLLOUT
             setFlag(Native.EPOLLOUT);

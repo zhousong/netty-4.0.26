@@ -46,7 +46,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * {@link SingleThreadEventLoop} implementation which register the {@link Channel}'s to a
  * {@link Selector} and so does the multi-plexing of these in the event loop.
- *
+ * 
+ * 多路复用：
+ * 注册多个Channel 到 一个Selector上
  */
 public final class NioEventLoop extends SingleThreadEventLoop {
 
@@ -104,14 +106,17 @@ public final class NioEventLoop extends SingleThreadEventLoop {
      * break out of its selection process. In our case we use a timeout for
      * the select method and the select method will block for that time unless
      * waken up.
+     * Selector.select阻塞时，可能因为业务层提交Task，被唤醒
+     * 默认情况下，会阻塞一定的时间
      */
     private final AtomicBoolean wakenUp = new AtomicBoolean();
-
+    // IO操作和执行业务层提交的Task占用时间的比率
     private volatile int ioRatio = 50;
     private int cancelledKeys;
     private boolean needsToSelectAgain;
 
     NioEventLoop(NioEventLoopGroup parent, ThreadFactory threadFactory, SelectorProvider selectorProvider) {
+    	// false -- Task提交时，是否需要wakeUp loop线程
         super(parent, threadFactory, false);
         if (selectorProvider == null) {
             throw new NullPointerException("selectorProvider");
@@ -359,6 +364,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
 
                 if (isShuttingDown()) {
                     closeAll();
+                    // 确保线程关闭后，break出循环
                     if (confirmShutdown()) {
                         break;
                     }
