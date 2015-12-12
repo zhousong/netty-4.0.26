@@ -151,6 +151,7 @@ public class OioServerSocketChannel extends AbstractOioMessageChannel
         }
 
         try {
+        	// 三次握手成功后，接入新客户端
             Socket s = socket.accept();
             try {
                 buf.add(new OioSocketChannel(this, s));

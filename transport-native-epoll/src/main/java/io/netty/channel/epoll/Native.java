@@ -67,6 +67,7 @@ final class Native {
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, (byte) 0xff, (byte) 0xff };
 
     // As all our JNI methods return -errno on error we need to compare with the negative errno codes.
+    // 都是负值
     private static final int ERRNO_EBADF_NEGATIVE = -errnoEBADF();
     private static final int ERRNO_EPIPE_NEGATIVE = -errnoEPIPE();
     private static final int ERRNO_ECONNRESET_NEGATIVE = -errnoECONNRESET();
@@ -130,6 +131,7 @@ final class Native {
 
     private static int ioResult(String method, int err, IOException resetCause) throws IOException {
         // network stack saturated... try again later
+    	// 缓冲区写满或数据读取完了，正常返回
         if (err == ERRNO_EAGAIN_NEGATIVE || err == ERRNO_EWOULDBLOCK_NEGATIVE) {
             return 0;
         }
@@ -187,6 +189,7 @@ final class Native {
 
     public static int write(int fd, ByteBuffer buf, int pos, int limit) throws IOException {
         int res = write0(fd, buf, pos, limit);
+        // 写入的数据量
         if (res >= 0) {
             return res;
         }
@@ -197,6 +200,7 @@ final class Native {
 
     public static int writeAddress(int fd, long address, int pos, int limit) throws IOException {
         int res = writeAddress0(fd, address, pos, limit);
+        // 写入的数据量
         if (res >= 0) {
             return res;
         }
@@ -207,6 +211,7 @@ final class Native {
 
     public static long writev(int fd, ByteBuffer[] buffers, int offset, int length) throws IOException {
         long res = writev0(fd, buffers, offset, length);
+        // 写入的数据量
         if (res >= 0) {
             return res;
         }
@@ -228,9 +233,11 @@ final class Native {
 
     public static int read(int fd, ByteBuffer buf, int pos, int limit) throws IOException {
         int res = read0(fd, buf, pos, limit);
+        // 读取到的数据量
         if (res > 0) {
             return res;
         }
+        // res == 0时，表示Socket关闭
         if (res == 0) {
             return -1;
         }
@@ -241,9 +248,11 @@ final class Native {
 
     public static int readAddress(int fd, long address, int pos, int limit) throws IOException {
         int res = readAddress0(fd, address, pos, limit);
+        // 读取到的数据量
         if (res > 0) {
             return res;
         }
+        // res == 0时，表示Socket关闭
         if (res == 0) {
             return -1;
         }
@@ -530,6 +539,7 @@ final class Native {
         if (res >= 0) {
             return res;
         }
+        // 待接入的客户端处理完成
         if (res == ERRNO_EAGAIN_NEGATIVE || res == ERRNO_EWOULDBLOCK_NEGATIVE) {
             // Everything consumed so just return -1 here.
             return -1;

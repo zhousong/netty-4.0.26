@@ -287,7 +287,7 @@ abstract class AbstractEpollChannel extends AbstractChannel implements UnixChann
                         return writtenBytes;
                     }
                 } else {
-                	// localFlushedAmount=0，可能出现了异常
+                	// localFlushedAmount == 0，缓冲区写满了，等待EPOLLOUT通知
                     break;
                 }
             }

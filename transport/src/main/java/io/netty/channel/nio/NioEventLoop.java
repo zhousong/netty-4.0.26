@@ -618,6 +618,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
             long currentTimeNanos = System.nanoTime();
             long selectDeadLineNanos = currentTimeNanos + delayNanos(currentTimeNanos);
             for (;;) {
+            	// 计算Select需要暂停的时间
                 long timeoutMillis = (selectDeadLineNanos - currentTimeNanos + 500000L) / 1000000L;
                 if (timeoutMillis <= 0) {
                     if (selectCnt == 0) {
@@ -627,6 +628,9 @@ public final class NioEventLoop extends SingleThreadEventLoop {
                     break;
                 }
 
+                // Parameters:timeout If positive, block for up to timeout milliseconds, 
+                // more or less, while waiting for a channel to become ready; if zero, block indefinitely; must not be negative
+                // timeoutMillis不能为负，== 0时，block indefinitely，阻塞变得不确定？
                 int selectedKeys = selector.select(timeoutMillis);
                 selectCnt ++;
 

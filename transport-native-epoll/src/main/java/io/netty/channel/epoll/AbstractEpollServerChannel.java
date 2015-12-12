@@ -102,7 +102,9 @@ public abstract class AbstractEpollServerChannel extends AbstractEpollChannel im
                             ? Integer.MAX_VALUE : config.getMaxMessagesPerRead();
                     int messages = 0;
                     do {
+                    	// 服务器接入新客户端
                         int socketFd = Native.accept(fd().intValue(), acceptedAddress);
+                        // 所有三次握手完待接入的客户端处理完成
                         if (socketFd == -1) {
                             // this means everything was handled for now
                             break;
@@ -111,6 +113,8 @@ public abstract class AbstractEpollServerChannel extends AbstractEpollChannel im
 
                         try {
                             int len = acceptedAddress[0];
+                            // EpollServerSocketChannel时:new EpollSocketChannel(this, fd, Native.address(address, offset, len));
+                            // 新接入的客户端对应一个EpollSocketChannel，绑定职责链Handler(HeadContext<->LoggingHandler<->DecodeHandler<->EncodeHandler<->TailContext)
                             pipeline.fireChannelRead(newChildChannel(socketFd, acceptedAddress, 1, len));
                         } catch (Throwable t) {
                             // keep on reading as we use epoll ET and need to consume everything from the socket

@@ -1,5 +1,5 @@
 SingleThreadEventExecutor：
-	执行execute方法，立即执行（可能在loop线程）或addTask将Task保存到TaskQueue中
+	执行execute方法，立即执行（如果已经在loop线程）或addTask将Task保存到TaskQueue中
 	
 	SingleThreadEventExecutor：newTaskQueue()
 	默认使用LinkedBlockingQueue来保存待执行的Task，如果子类不需要使用阻塞的方法，可以用其他高性能的Queue来替代
@@ -8,7 +8,8 @@ SingleThreadEventExecutor：
 	
 	WAKEUP_TASK是个空的Runnable，作用是什么？
 
-
+服务端启动后ServerSocketChannel对应的Handler职责链为：HeadContext<->LoggingHandler<->ServerBootstrapAcceptor
+每个连接成功的client对应一个SocketChannel，channel对应Handler职责链为(HeadContext<->LoggingHandler<->DecodeHandler<->EncodeHandler<->LogicHandler<->TailContext)
 
 
 

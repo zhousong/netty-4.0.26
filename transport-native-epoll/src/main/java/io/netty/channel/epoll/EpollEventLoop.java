@@ -56,6 +56,7 @@ final class EpollEventLoop extends SingleThreadEventLoop {
 
     @SuppressWarnings("unused")
     private volatile int wakenUp;
+    // IO处理和业务层提交的Task执行比率
     private volatile int ioRatio = 50;
 
     EpollEventLoop(EventLoopGroup parent, ThreadFactory threadFactory, int maxEvents) {
@@ -149,6 +150,7 @@ final class EpollEventLoop extends SingleThreadEventLoop {
     @Override
     protected Queue<Runnable> newTaskQueue() {
         // This event loop never calls takeTask()
+    	// MPSC：多个生产者一个消费者队列
         return PlatformDependent.newMpscQueue();
     }
 
@@ -272,6 +274,8 @@ final class EpollEventLoop extends SingleThreadEventLoop {
                     //increase the size of the array as we needed the whole space for the events
                     events.increase();
                 }
+                // state状态已经设置为：ST_SHUTTING_DOWN == 3，则关闭Socket
+                // 如果是服务器，需要关闭所有连接上来的SocketChannel
                 if (isShuttingDown()) {
                     closeAll();
                     // 确保线程关闭后，break出循环
@@ -282,8 +286,8 @@ final class EpollEventLoop extends SingleThreadEventLoop {
             } catch (Throwable t) {
                 logger.warn("Unexpected exception in the selector loop.", t);
 
-                // Prevent possible consecutive immediate failures that lead to
-                // excessive CPU consumption.
+                // Prevent possible consecutive immediate failures that lead to excessive CPU consumption.
+                // 异常失败时，避免for循环导致CPU忙转，线程暂停 1 秒
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {

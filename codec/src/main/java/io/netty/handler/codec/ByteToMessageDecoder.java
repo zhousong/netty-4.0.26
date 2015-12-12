@@ -240,7 +240,7 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
             } catch (Throwable t) {
                 throw new DecoderException(t);
             } finally {
-            	//累积Bytebuf为空则释放对象
+            	//累积Bytebuf非空则释放对象
                 if (cumulation != null && !cumulation.isReadable()) {
                     cumulation.release();
                     cumulation = null;
@@ -317,24 +317,30 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
      * @param ctx           the {@link ChannelHandlerContext} which this {@link ByteToMessageDecoder} belongs to
      * @param in            the {@link ByteBuf} from which to read data
      * @param out           the {@link List} to which decoded messages should be added
+     * 
+     * List<Object> out：decode出来的msg列表
      */
     protected void callDecode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) {
         try {
             while (in.isReadable()) {
+            	// decode前，msgList长度
                 int outSize = out.size();
+                // decode前，ByteBuf的可读数据长度
                 int oldInputLength = in.readableBytes();
+                // decode操作时，可能只有半包数据，即数据长度不够，说明累积的bytebuf还不够，会返回null
                 decode(ctx, in, out);
 
                 // Check if this handler was removed before continuing the loop.
                 // If it was removed, it is not safe to continue to operate on the buffer.
-                //
+                //如果Handler被删除了，跳出循环
                 // See https://github.com/netty/netty/issues/1664
                 if (ctx.isRemoved()) {
                     break;
                 }
 
-                // 一次Decode完成后，outList没有变化
-                if (outSize == out.size()) {// 需要处理的Bytebuf数据长度未变化，则说明是半包，需要再从Socket中读取数据
+                // 一次Decode完成后，outList没有变化，说明没有得到新的msg
+                if (outSize == out.size()) {
+                    // 需要处理的Bytebuf数据长度未变化，则说明是半包，需要再从Socket中读取数据
                     if (oldInputLength == in.readableBytes()) {
                         break;
                     } else {//???
@@ -381,14 +387,15 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
     protected void decodeLast(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
         decode(ctx, in, out);
     }
-
     /**
-     * 新建Bytebuf，释放旧的buf
+     * 扩容
      */
     static ByteBuf expandCumulation(ByteBufAllocator alloc, ByteBuf cumulation, int readable) {
         ByteBuf oldCumulation = cumulation;
+        // 新建Bytebuf
         cumulation = alloc.buffer(oldCumulation.readableBytes() + readable);
         cumulation.writeBytes(oldCumulation);
+        // 释放旧的buf
         oldCumulation.release();
         return cumulation;
     }

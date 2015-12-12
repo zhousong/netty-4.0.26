@@ -288,7 +288,7 @@ public class NioSocketChannel extends AbstractNioByteChannel implements io.netty
                     super.doWrite(in);
                     return;
                 case 1:
-                    // Only one ByteBuf so use non-gathering write
+                    // Only one ByteBuf so use non-gathering write,只有一个ByteBuf，使用非聚集发送
                     ByteBuffer nioBuffer = nioBuffers[0];
                     // 默认writeSpinCount = 16
                     for (int i = config().getWriteSpinCount() - 1; i >= 0; i --) {
@@ -328,7 +328,7 @@ public class NioSocketChannel extends AbstractNioByteChannel implements io.netty
 
             if (!done) {
                 // Did not write all buffers completely.
-            	// buffer中消息未发送完成
+            	// buffer中消息未发送完成，防止其他任务被饿死，作为一个Task提交到EventLoop待处理
                 incompleteWrite(setOpWrite);
                 break;
             }

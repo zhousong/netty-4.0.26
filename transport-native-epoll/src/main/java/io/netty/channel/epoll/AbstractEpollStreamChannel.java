@@ -245,6 +245,7 @@ public abstract class AbstractEpollStreamChannel extends AbstractEpollChannel {
             }
 
             // Do gathering write if the outbounf buffer entries start with more than one ByteBuf.
+            // 批量写入
             if (msgCount > 1 && in.current() instanceof ByteBuf) {
                 if (!doWriteMultiple(in, writeSpinCount)) {
                     break;
@@ -606,6 +607,7 @@ public abstract class AbstractEpollStreamChannel extends AbstractEpollChannel {
             boolean close = false;
             try {
                 // if edgeTriggered is used we need to read all messages as we are not notified again otherwise.
+            	// ET模式下，必须将缓冲区中的数据全部读完，因为不会再收到内核的通知
                 final int maxMessagesPerRead = edgeTriggered
                         ? Integer.MAX_VALUE : config.getMaxMessagesPerRead();
                 int messages = 0;
@@ -616,9 +618,12 @@ public abstract class AbstractEpollStreamChannel extends AbstractEpollChannel {
                     byteBuf = allocHandle.allocate(allocator);
                     int writable = byteBuf.writableBytes();
                     int localReadAmount = doReadBytes(byteBuf);
+                    // Native代码：int res = read0(fd, buf, pos, limit); 
+                    // res == 0时，表示Socket关闭
                     if (localReadAmount <= 0) {
                         // not was read release the buffer
                         byteBuf.release();
+                        // localReadAmount == -1时，表示Socket关闭
                         close = localReadAmount < 0;
                         break;
                     }
@@ -626,6 +631,7 @@ public abstract class AbstractEpollStreamChannel extends AbstractEpollChannel {
                     pipeline.fireChannelRead(byteBuf);
                     byteBuf = null;
 
+                    // 累积读取竟然大于Integer.MAX_VALUE？？？，有可能发生这种情况吗？
                     if (totalReadAmount >= Integer.MAX_VALUE - localReadAmount) {
                         allocHandle.record(totalReadAmount);
 
@@ -634,7 +640,8 @@ public abstract class AbstractEpollStreamChannel extends AbstractEpollChannel {
                     } else {
                         totalReadAmount += localReadAmount;
                     }
-
+                    // 如果读取到的数据未把byteBuf写满，则说明缓冲区中数据未读完，必须全部读完
+                    // 防止持续有数据，导致其他fd饿死，此处在后续版本中有优化
                     if (localReadAmount < writable) {
                         // Read less than what the buffer can hold,
                         // which might mean we drained the recv buffer completely.
@@ -660,6 +667,7 @@ public abstract class AbstractEpollStreamChannel extends AbstractEpollChannel {
                 if (!closed) {
                     // trigger a read again as there may be something left to read and because of epoll ET we
                     // will not get notified again until we read everything from the socket
+                	// 异常情况，继续读数据，因为ET 模式下必须读完所有数据
                     eventLoop().execute(new Runnable() {
                         @Override
                         public void run() {
