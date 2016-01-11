@@ -26,6 +26,7 @@ import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.internal.ConcurrentSet;
 import io.netty.util.internal.StringUtil;
 
+import java.nio.ByteBuffer;
 import java.util.AbstractSet;
 import java.util.ArrayList;
 import java.util.Collection;

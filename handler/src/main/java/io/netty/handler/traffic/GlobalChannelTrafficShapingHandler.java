@@ -123,9 +123,11 @@ public class GlobalChannelTrafficShapingHandler extends AbstractTrafficShapingHa
      */
     private volatile long readChannelLimit;
 
+    // 默认偏差
     private static final float DEFAULT_DEVIATION = 0.1F;
     private static final float MAX_DEVIATION = 0.4F;
     private static final float DEFAULT_SLOWDOWN = 0.4F;
+    // 促进、加速
     private static final float DEFAULT_ACCELERATION = -0.1F;
     private volatile float maxDeviation;
     private volatile float accelerationFactor;

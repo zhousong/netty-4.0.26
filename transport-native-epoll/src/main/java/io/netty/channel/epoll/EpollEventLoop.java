@@ -326,6 +326,10 @@ final class EpollEventLoop extends SingleThreadEventLoop {
 
                 AbstractEpollChannel ch = channels.get(fd);
                 if (ch != null && ch.isOpen()) {
+                	// 测试：
+                	// 1、客户端正常关闭，收到Fin请求，ev = 8193，即收到事件为Native.EPOLLRDHUP + Native.EPOLLIN
+                	// 2、客户端程序被杀掉（window），server将收到Reset，ev = 8214，事件为Native.EPOLLRDHUP + Native.EPOLLOUT
+                	// 2、客户端程序断网后被杀掉或客户端崩溃，server无法及时感知，后续server再向客户端发送消息，server将收到Reset，ev = 8214，事件为Native.EPOLLRDHUP + Native.EPOLLOUT
                     boolean close = (ev & Native.EPOLLRDHUP) != 0;
                     boolean read = (ev & Native.EPOLLIN) != 0;
                     boolean write = (ev & Native.EPOLLOUT) != 0;

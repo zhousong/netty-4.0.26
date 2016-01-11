@@ -338,7 +338,7 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
                     break;
                 }
 
-                // 一次Decode完成后，outList没有变化，说明没有得到新的msg
+                // 一次Decode完成后，outList没有变化，说明没有decode出新的msg
                 if (outSize == out.size()) {
                     // 需要处理的Bytebuf数据长度未变化，则说明是半包，需要再从Socket中读取数据
                     if (oldInputLength == in.readableBytes()) {

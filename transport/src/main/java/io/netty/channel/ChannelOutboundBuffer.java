@@ -67,7 +67,7 @@ public final class ChannelOutboundBuffer {
     // The Entry which represents the tail of the buffer
     private Entry tailEntry;
     // The number of flushed entries that are not written yet
-    // 没有写入内核的消息个数，即待发送的消息个数
+    // 即将发送的消息个数，没有写入内核缓冲区
     private int flushed;
     // ByteBuffer个数，大部分一个ByteBuf对就一个ByteBuffer
     // ByteBuf.nioBufferCount()
@@ -156,7 +156,7 @@ public final class ChannelOutboundBuffer {
             }
             do {
                 flushed ++;
-                // 将当然message设置为UNCANCELLABLE
+                // 将当前message设置为UNCANCELLABLE
                 if (!entry.promise.setUncancellable()) {
                     // Was cancelled so make sure we free up memory and notify about the freed bytes
                 	// 释放message,返回占用字节数
